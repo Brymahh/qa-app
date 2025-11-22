@@ -35,6 +35,34 @@ def get_groq_response(client, context, question, model_name='llam-3.1-8b-instant
         return f"Error getting response {str(e)}"
     
     
-    
 def load_embedding_model():
     return SentenceTransformer('all-MiniLM-L6-v2')
+
+
+class LocalVectorStore:
+    def __init__(self, embeddiing_model):
+        self.embeddiing_model = embeddiing_model
+        self.chunks = []
+        self.embeddings = None
+        self.index = None
+        
+    def add_documents(self, documents): 
+        self.chunks = [doc.page_content for doc in documents]
+        
+        embeddings = self.embeddiing_model.encode(self.chunks)
+        self.embeddings = np.array(embeddings).astype('float32')
+        
+        dimension = self.embeddings.shape[1]
+        self.index = faiss.IndexFlatL2(dimension)
+        self.index.add(self.embeddings)
+        
+    def similarity_search(self, query, k=4):
+        if self.index is None:
+            return [] 
+        
+        query_embedding = self.embeddiing_model.encode([query])
+        query_embedding = np.array(query_embedding).astype('float32')
+        
+        
+        
+            
